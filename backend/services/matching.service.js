@@ -3,11 +3,11 @@ import pool from '../config/db.js';
 export const calculateMatchScore = (user1, user2) => {
     let score = 0;
     let overlapSubjects = 0;
-    if (user1.subjects && user2.subjects) {
-      user1.subjects.forEach(sub => {
-         if (user2.subjects.includes(sub)) overlapSubjects++;
+     if (user1.interests && user2.interests) {
+        user1.interests.forEach(sub => {
+            if (user2.interests.includes(sub)) overlapSubjects++;
       });
-      score += (overlapSubjects / Math.max(user1.subjects.length, 1)) * 50;
+        score += (overlapSubjects / Math.max(user1.interests.length, 1)) * 50;
     }
 
     let overlapSkills = 0;
@@ -41,14 +41,14 @@ export const getMatchesForUser = async (userId) => {
     if (currentUserReq.rows.length === 0) throw new Error('User not found');
     const currentUser = currentUserReq.rows[0];
 
-    currentUser.subjects = typeof currentUser.subjects === 'string' ? JSON.parse(currentUser.subjects) : currentUser.subjects;
+    currentUser.interests = typeof currentUser.interests === 'string' ? JSON.parse(currentUser.interests) : currentUser.interests;
     currentUser.skills = typeof currentUser.skills === 'string' ? JSON.parse(currentUser.skills) : currentUser.skills;
     currentUser.availability = typeof currentUser.availability === 'string' ? JSON.parse(currentUser.availability) : currentUser.availability;
 
     const allUsersReq = await pool.query('SELECT * FROM users WHERE id != $1 AND is_active = true', [userId]);
     const allUsers = allUsersReq.rows.map(u => ({
         ...u,
-        subjects: typeof u.subjects === 'string' ? JSON.parse(u.subjects) : u.subjects,
+        interests: typeof u.interests === 'string' ? JSON.parse(u.interests) : u.interests,
         skills: typeof u.skills === 'string' ? JSON.parse(u.skills) : u.skills,
         availability: typeof u.availability === 'string' ? JSON.parse(u.availability) : u.availability
     }));

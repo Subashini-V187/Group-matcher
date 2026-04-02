@@ -1,21 +1,23 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { useAppContext } from '../context/AppContext';
 
 export default function Schedule() {
-  const hours = Array.from({ length: 8 }, (_, i) => `${i + 13}:00`);
+  const { sessions } = useAppContext();
+
   return (
-    <div>
-      <h1 className="text-4xl font-bold tracking-tighter mb-8">Chronology</h1>
-      <div className="glass rounded-3xl p-8 overflow-x-auto hide-scrollbar">
-        <div className="min-w-[600px]">
-          <div className="grid grid-cols-8 gap-4 mb-4">
-            {hours.map(h => <div key={h} className="text-xs font-mono opacity-50 text-center">{h}</div>)}
+    <div className="text-black dark:text-white">
+      <h1 className="text-4xl font-bold tracking-tighter mb-8">Schedule</h1>
+      <div className="space-y-4">
+        {sessions.map((session) => (
+          <div key={session.id} className="glass rounded-2xl p-5 border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/40">
+            <p className="text-lg font-semibold">{session.title}</p>
+            <p className="text-sm opacity-75">{session.group_name}</p>
+            <p className="text-sm opacity-85 mt-2">{new Date(session.starts_at).toLocaleString()}</p>
           </div>
-          <div className="relative h-32 border-t border-b" style={{ borderColor: 'var(--glass-border)' }}>
-            <motion.div initial={{ width: 0 }} animate={{ width: '25%' }} className="absolute h-full left-[25%] opacity-20 border-x" style={{ background: 'var(--foreground)', borderColor: 'var(--foreground)' }} />
-            <motion.div initial={{ width: 0 }} animate={{ width: '12.5%' }} className="absolute h-full left-[62.5%] opacity-20 border-x" style={{ background: 'var(--foreground)', borderColor: 'var(--foreground)' }} />
-          </div>
-        </div>
+        ))}
+        {sessions.length === 0 && (
+          <div className="glass rounded-2xl p-5 border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/40">No sessions yet.</div>
+        )}
       </div>
     </div>
   );
