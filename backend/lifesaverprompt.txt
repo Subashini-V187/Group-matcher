@@ -1,0 +1,136 @@
+You are a principal full-stack platform engineer.
+Your task is to productionize this existing monorepo project end-to-end so another teammate can review and merge as a clean PR.
+
+Project context:
+
+Frontend is React + Vite in root folder
+Backend is Node + Express + PostgreSQL in backend folder
+Need one-command local startup for both frontend and backend
+Need complete, reliable DB initialization and seed flow
+Need robust scripts so a new developer can clone and run with minimal manual setup
+Non-negotiable goal:
+Implement all infra, scripts, schema, migrations, seeds, and run orchestration so everything works from zero with one root command.
+
+Primary requirements:
+
+Dependency setup and cleanup
+Ensure root and backend dependencies are correct and minimal.
+Add any missing packages needed for:
+Concurrent frontend + backend execution
+PostgreSQL DB initialization/migration/seeding
+Backend reliability and validation
+Remove obsolete or conflicting scripts/dependencies if needed.
+Keep package manifests clean and consistent.
+Single command development startup
+From root, running npm run dev must start both frontend and backend concurrently.
+Backend must start from backend folder.
+Frontend must start from root.
+Process output should be readable (named processes).
+Add optional scripts for:
+dev:frontend
+dev:backend
+dev:full or equivalent
+Make sure this works on Linux/macOS.
+Environment variable strategy
+Standardize environment variables for backend DB config and app config.
+Provide a safe .env.example with all required keys.
+Ensure backend handles missing env vars with clear startup errors.
+Keep actual secret values out of committed files.
+PostgreSQL schema and DB structure
+Build a complete schema for the app with proper relational design.
+Include all required entities, at minimum:
+users
+groups
+group_members
+sessions
+chat_messages
+notes
+user_interactions
+hako
+Ensure proper:
+primary keys
+foreign keys
+unique constraints
+indexes
+timestamps
+cascading rules where appropriate
+Ensure compatibility with existing older DBs (non-breaking migration path).
+Migrations and initialization pipeline
+Implement a reliable DB bootstrap sequence:
+create database if missing
+run schema migrations
+run compatibility migrations for old schemas
+run seed data
+Should be idempotent (safe to run multiple times).
+Add root scripts like:
+db:init
+db:migrate
+db:seed
+db:reset (optional but useful)
+Ensure clear success/failure logging.
+Seed data
+Seed meaningful starter data:
+at least 50 groups
+sessions linked to groups
+optional test users if safe
+Seeding must avoid duplicates when rerun.
+Keep seed logic deterministic and maintainable.
+Backend runtime hardening
+Ensure backend starts cleanly and connects to DB reliably.
+Add startup checks:
+DB connectivity check
+clear failure messages
+Keep route behavior stable and persistent with PostgreSQL data.
+Ensure profile persistence and core flows survive restart.
+Frontend-backend integration sanity
+Confirm frontend works against backend APIs.
+No mock fallback after authenticated login for core data.
+Ensure startup command allows app usage immediately after db:init or first run.
+Developer experience
+Update README with exact local setup flow:
+install dependencies
+configure env
+initialize DB
+run app
+Include troubleshooting section for:
+Postgres auth failure
+port conflicts
+missing env
+Add clear script descriptions.
+PR-quality output
+Keep changes scoped and clean.
+Do not break existing app architecture unnecessarily.
+Prefer small reusable utility modules over duplicated logic.
+Preserve code style consistency.
+Implementation constraints:
+
+Use npm scripts only (no global assumptions besides Node, npm, PostgreSQL).
+Do not hardcode secrets.
+Do not rely on manual SQL steps after setup.
+All setup should be scriptable and reproducible.
+Avoid destructive operations unless explicitly in reset script.
+Expected deliverables:
+
+Updated root package.json scripts for one-command dev
+Updated backend package.json scripts for db lifecycle
+Stable DB setup/migration/seed scripts
+Updated schema and compatibility migration handling
+Updated .env.example
+Updated README with exact runbook
+Any required helper files for orchestration
+Validation checklist you must run before finishing:
+
+Fresh install passes dependency installation
+DB init runs successfully on existing and fresh DB
+npm run dev from root starts frontend and backend together
+Registration/login/profile persistence works
+Groups/sessions/notes/chat-related tables exist in DB
+Rerunning init/seed does not crash or duplicate improperly
+No fatal runtime errors in console at startup
+Output format required from you:
+
+Show all changed files with concise summaries
+Show exact scripts added/updated
+Show final local run commands
+Show validation results with pass/fail
+If anything cannot be completed, state blocker and provide fallback
