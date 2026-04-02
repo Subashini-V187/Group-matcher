@@ -1,24 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 
 export default function Profile() {
-  const { user, updateUser, notify } = useAppContext();
-
-  // Create local state so user can type freely before saving
+  const { user, updateUser, notify, refreshUser } = useAppContext();
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    designation: 'Executive User',
-    institution: 'Global Tech University',
-    department: 'Computer Science',
-    skillTier: 'Intermediate',
-    availability: '18:00 - 22:00 EST'
+    name: '',
+    bio: '',
+    location: '',
+    skills: '',
+    languages: '',
+    availability: '',
   });
 
-  // Sync up if global user state already has some data
   useEffect(() => {
-    if (user?.profileData) {
-      setFormData(user.profileData);
-    }
+    if (!user) return;
+    setFormData({
+      name: user.name || '',
+      bio: user.bio || '',
+      location: user.location || '',
+      skills: Array.isArray(user.skills) ? user.skills.join(', ') : '',
+      languages: Array.isArray(user.languages) ? user.languages.join(', ') : '',
+      availability: Array.isArray(user.availability) ? user.availability.join(', ') : '',
+    });
   }, [user]);
 
   const handleChange = (e) => {
@@ -26,46 +31,63 @@ export default function Profile() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    updateUser({ profileData: formData });
-    notify('Profile parameters synchronized.', 'success');
+    try {
+      setSaving(true);
+      await updateUser({
+        name: formData.name,
+        bio: formData.bio,
+        location: formData.location,
+        skills: formData.skills.split(',').map(v => v.trim()).filter(Boolean),
+        languages: formData.languages.split(',').map(v => v.trim()).filter(Boolean),
+        availability: formData.availability.split(',').map(v => v.trim()).filter(Boolean),
+      });
+      await refreshUser();
+      notify('Profile saved successfully.', 'success');
+    } catch (err) {
+      notify(err.message, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-3xl text-black dark:text-white">
       <h1 className="text-4xl font-bold tracking-tighter mb-8">Profile</h1>
-      <motion.form initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSave} className="glass p-8 rounded-3xl space-y-6 shadow-xl">
+      <motion.form initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleSave} className="glass p-8 rounded-3xl space-y-6 shadow-xl border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/40">
         <div className="grid sm:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest opacity-50">Full Designation</label>
-            <input name="designation" value={formData.designation} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm" />
+            <label className="text-xs font-bold uppercase tracking-widest opacity-70">Name</label>
+            <input name="name" value={formData.name} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm border border-gray-200 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white" />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest opacity-50">Institution Name</label>
-            <input name="institution" value={formData.institution} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest opacity-50">Department</label>
-            <input name="department" value={formData.department} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest opacity-50">Skill Tier</label>
-            <select name="skillTier" value={formData.skillTier} onChange={handleChange} className="glass-input w-full p-3 rounded-xl text-sm appearance-none bg-transparent">
-              <option className="text-black">Beginner</option>
-              <option className="text-black">Intermediate</option>     
-              <option className="text-black">Advanced</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest opacity-50">Availability</label>
-            <input name="availability" value={formData.availability} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm" />
+            <label className="text-xs font-bold uppercase tracking-widest opacity-70">Location</label>
+            <input name="location" value={formData.location} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm border border-gray-200 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white" />
           </div>
         </div>
-        <div className="pt-6">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="px-6 py-3 rounded-xl text-sm font-bold tracking-wide border transition-all" style={{ background: 'var(--foreground)', color: 'var(--background)', borderColor: 'var(--foreground)' }}>
-            Synchronize Data
-          </motion.button>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-widest opacity-70">Bio</label>
+          <textarea name="bio" value={formData.bio} onChange={handleChange} rows={3} className="glass-input w-full p-3 rounded-xl text-sm border border-gray-200 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-widest opacity-70">Skills</label>
+            <input name="skills" value={formData.skills} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm border border-gray-200 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white" placeholder="React, Node, SQL" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-widest opacity-70">Languages</label>
+            <input name="languages" value={formData.languages} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm border border-gray-200 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white" placeholder="English, Hindi" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-widest opacity-70">Availability</label>
+            <input name="availability" value={formData.availability} onChange={handleChange} type="text" className="glass-input w-full p-3 rounded-xl text-sm border border-gray-200 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white" placeholder="Mon 8PM, Tue 9PM" />
+          </div>
+        </div>
+        <div className="pt-4">
+          <button type="submit" disabled={saving} className="px-6 py-3 rounded-xl text-sm font-bold tracking-wide border border-gray-200 dark:border-white/10 bg-black dark:bg-white text-white dark:text-black disabled:opacity-70">
+            {saving ? 'Saving...' : 'Save Profile'}
+          </button>
         </div>
       </motion.form>
     </div>

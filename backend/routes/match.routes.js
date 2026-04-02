@@ -15,6 +15,29 @@ router.get('/', authenticate, async (req, res) => {
     }
 });
 
+router.get('/groups', authenticate, async (req, res) => {
+    try {
+        const userResult = await pool.query('SELECT interests FROM users WHERE id = $1', [req.user.id]);
+        const interests = userResult.rows[0]?.interests || [];
+
+        const groupsResult = await pool.query(
+            `SELECT g.*, COUNT(gm.user_id)::int AS members
+             FROM groups g
+             LEFT JOIN group_members gm ON gm.group_id = g.id
+             WHERE g.id NOT IN (SELECT group_id FROM group_members WHERE user_id = $1)
+             GROUP BY g.id
+             ORDER BY CASE WHEN g.subject = ANY($2::text[]) THEN 0 ELSE 1 END, g.created_at DESC
+             LIMIT 20`,
+            [req.user.id, interests]
+        );
+
+        res.json(groupsResult.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to fetch group matches' });
+    }
+});
+
 // Record a swipe/interaction
 router.post('/action', authenticate, async (req, res) => {
     const { targetUserId, action } = req.body; // action: 'LIKE', 'PASS'

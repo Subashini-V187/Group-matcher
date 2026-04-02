@@ -14,16 +14,17 @@ router.post('/register', [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { email, password, name, bio, subjects, skills, location, languages, availability } = req.body;
+  const { email, password, name } = req.body;
 
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, name, bio, subjects, skills, location, languages, availability) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, email, name`,
-      [email, hashedPassword, name, bio, JSON.stringify(subjects), JSON.stringify(skills), location, JSON.stringify(languages), JSON.stringify(availability)]
+      `INSERT INTO users (email, password_hash, name)
+       VALUES ($1, $2, $3)
+       RETURNING id, email, name, onboarding_completed`,
+      [email, hashedPassword, name]
     );
 
     const token = jwt.sign({ id: result.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -58,6 +59,31 @@ router.post('/login', [
      console.error(err);
      res.status(500).json({ message: 'Server error' });
    }
+});
+
+router.get('/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const result = await pool.query(
+      `SELECT id, email, name, bio, interests, skills, location, languages, availability, onboarding_completed
+       FROM users WHERE id = $1`,
+      [decoded.id]
+    );
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
 });
 
 export default router;
